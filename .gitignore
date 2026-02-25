@@ -1,3 +1,21 @@
+# Virtual environment
 venv/
+
 db.sqlite3
-*.pkl
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environmental variable
+.env
+
+# Local databases
+*.sqlite
+*.db
+
+# IDE files
+.vscode/
+.idea/
+
+instance/
