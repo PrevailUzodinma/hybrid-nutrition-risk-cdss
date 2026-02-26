@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Login — NutriCDSS{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <h4 class="mb-1 text-center" style="color:#1a3c5e">NutriCDSS</h4>
+                <p class="text-center text-muted small mb-4">GP Consultation Portal</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Username</label>
+                        <input type="text" name="username" class="form-control" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    {% if form.errors %}
+                    <div class="alert alert-danger py-2 small">Invalid username or password.</div>
+                    {% endif %}
+                    <button type="submit" class="btn btn-primary w-100"
+                            style="background:#1a3c5e; border-color:#1a3c5e;">Sign In</button>
+                </form>
+                <p class="text-center text-muted small mt-3">
+                    Demo: <strong>gp_demo</strong> / <strong>password123</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
