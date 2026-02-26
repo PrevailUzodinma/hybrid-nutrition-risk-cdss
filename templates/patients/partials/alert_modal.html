@@ -1,0 +1,117 @@
+<div class="modal fade" id="alertModal" tabindex="-1"
+     aria-labelledby="alertModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header modal-header-amber">
+                <h5 class="modal-title" id="alertModalLabel">
+                    {{ alert_result.emoji }} Nutritional Risk Assessment Details
+                </h5>
+                <button type="button" class="btn-close"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-3 p-3 rounded" style="background:#f8f9fa;">
+                    <strong>Alert triggered by:</strong>
+                    {% if alert_result.source == "BOTH" %}
+                        <span class="badge bg-warning text-dark ms-2">MUST + ML (both)</span>
+                    {% elif alert_result.source == "MUST" %}
+                        <span class="badge bg-warning text-dark ms-2">MUST (rule-based)</span>
+                    {% elif alert_result.source == "ML" %}
+                        <span class="badge bg-info text-dark ms-2">ML pattern detection</span>
+                    {% elif alert_result.source == "MUST_MODERATE" %}
+                        <span class="badge bg-secondary ms-2">MUST moderate</span>
+                    {% endif %}
+                    <p class="mt-2 mb-0 small text-muted">{{ alert_result.summary_text }}</p>
+                </div>
+
+                {% if must_result %}
+                <h6 class="fw-bold mb-2">📋 Rule-Based Screening (MUST)</h6>
+                <table class="table table-sm table-bordered small mb-3">
+                    <thead class="table-light">
+                        <tr><th>Component</th><th>Score</th><th>Detail</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>BMI</td>
+                            <td><strong>{{ must_result.bmi_score }}</strong></td>
+                            <td>{{ must_result.bmi_detail }}</td>
+                        </tr>
+                        <tr>
+                            <td>Weight loss (3–6 months)</td>
+                            <td><strong>{{ must_result.weight_loss_score }}</strong></td>
+                            <td>{{ must_result.weight_detail }}</td>
+                        </tr>
+                        <tr>
+                            <td>Acute illness effect</td>
+                            <td><strong>{{ must_result.acute_score }}</strong></td>
+                            <td>{{ must_result.acute_detail }}</td>
+                        </tr>
+                        <tr class="table-{% if must_result.risk == 'HIGH' %}danger
+                                         {% elif must_result.risk == 'MODERATE' %}warning
+                                         {% else %}success{% endif %}">
+                            <td><strong>Total MUST score</strong></td>
+                            <td><strong>{{ must_result.total_score }}</strong></td>
+                            <td><strong>{{ must_result.risk }} risk</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+                {% endif %}
+
+                {% if ml_result %}
+                <h6 class="fw-bold mb-2">
+                    🤖 ML Pattern Analysis
+                    <small class="fw-normal text-muted">(Logistic Regression — NHANES 2017-2018)</small>
+                </h6>
+                <p class="small mb-2">
+                    Probability of nutritional risk:
+                    <strong>{{ ml_result.probability|floatformat:0 }}%</strong>
+                    &nbsp;—&nbsp;
+                    {% if ml_result.risk_flag %}
+                    <span class="text-danger fw-semibold">HIGH risk flag raised</span>
+                    {% else %}
+                    <span class="text-success">risk flag not raised</span>
+                    {% endif %}
+                </p>
+                <div class="mb-3">
+                    <div class="small text-muted mb-1">Top contributing factors:</div>
+                    {% for factor in ml_result.top_factors %}
+                    <span class="factor-pill">
+                        {{ factor.label }} ({{ factor.raw_value|floatformat:1 }})
+                        — {{ factor.direction }} risk
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="alert alert-secondary small mb-3">
+                    <strong>⚕ Clinical note:</strong>
+                    Both MUST and ML assessments are shown for full transparency.
+                    This system provides decision support only — you remain the clinical
+                    decision maker. This nutritional alert (🟠 amber) is distinct from
+                    critical clinical alerts (🔴 red).
+                </div>
+
+                {% if alert_result.next_steps %}
+                <h6 class="fw-bold mb-2">💡 Suggested next steps</h6>
+                <ul class="small">
+                    {% for step in alert_result.next_steps %}
+                    <li class="mb-1">{{ step }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm"
+                        data-bs-dismiss="modal">Dismiss</button>
+                <button type="button" class="btn btn-secondary btn-sm"
+                        data-bs-dismiss="modal">Mark as reviewed</button>
+                <button type="button" class="btn btn-primary btn-sm"
+                        style="background:#1a3c5e;" data-bs-dismiss="modal">
+                    Pre-populate referral
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
