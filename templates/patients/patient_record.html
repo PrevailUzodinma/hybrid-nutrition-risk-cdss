@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}{{ patient.last_name }}, {{ patient.first_name }} — NutriCDSS{% endblock %}
+{% block content %}
+
+<a href="{% url 'appointments:appointment_list' %}" class="text-decoration-none text-muted small">
+    &larr; Back to clinic list
+</a>
+
+<div class="patient-header mt-2">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <h5>{{ patient.last_name }}, {{ patient.first_name }}</h5>
+            <small>
+                DOB: {{ patient.date_of_birth|date:"d/m/Y" }} &nbsp;&middot;&nbsp;
+                Age: {{ patient.age }} &nbsp;&middot;&nbsp;
+                {{ patient.get_sex_display }} &nbsp;&middot;&nbsp;
+                NHS: {{ patient.nhs_number }}
+            </small>
+        </div>
+        {% if latest_consultation %}
+        <small class="opacity-75">Last seen: {{ latest_consultation.consultation_date|date:"d M Y" }}</small>
+        {% endif %}
+    </div>
+</div>
+
+{% if alert_result.triggered %}
+{% include "patients/partials/alert_banner.html" %}
+{% endif %}
+
+{% if latest_consultation %}
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="metric-card">
+            <h6>Weight</h6>
+            <div class="metric-value">{{ latest_consultation.weight_kg|default:"—" }}
+                <small class="fs-6 fw-normal">kg</small></div>
+            <div class="metric-sub">at {{ latest_consultation.consultation_date|date:"d M Y" }}</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="metric-card">
+            <h6>BMI</h6>
+            <div class="metric-value
+                {% if latest_consultation.bmi %}
+                    {% if latest_consultation.bmi < 18.5 %}text-danger
+                    {% elif latest_consultation.bmi <= 20 %}text-warning{% endif %}
+                {% endif %}">
+                {{ latest_consultation.bmi|default:"—" }}
+            </div>
+            <div class="metric-sub">kg/m²</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="metric-card">
+            <h6>Albumin</h6>
+            <div class="metric-value
+                {% if latest_consultation.albumin_gdl and latest_consultation.albumin_gdl < 3.5 %}
+                text-danger{% endif %}">
+                {{ latest_consultation.albumin_gdl|default:"—" }}
+                <small class="fs-6 fw-normal">g/dL</small>
+            </div>
+            <div class="metric-sub">Serum albumin</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="metric-card">
+            <h6>Medications</h6>
+            <div class="metric-value {% if latest_consultation.polypharmacy_flag %}text-warning{% endif %}">
+                {{ latest_consultation.medication_count }}
+            </div>
+            <div class="metric-sub">
+                {% if latest_consultation.polypharmacy_flag %}⚠ Polypharmacy{% else %}active prescriptions{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <div class="metric-card mb-3">
+            <h6>Weight trend (kg)</h6>
+            <div class="chart-container"><canvas id="chartWeight"></canvas></div>
+        </div>
+        <div class="metric-card mb-3">
+            <h6>BMI trend</h6>
+            <div class="chart-container"><canvas id="chartBMI"></canvas></div>
+        </div>
+        <div class="metric-card">
+            <h6>Serum albumin trend (g/dL)</h6>
+            <div class="chart-container"><canvas id="chartAlbumin"></canvas></div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="metric-card mb-3">
+            <h6>Recent consultations</h6>
+            {% for c in all_consultations %}
+            <div class="border-bottom py-2 small">
+                <div class="fw-semibold">{{ c.consultation_date|date:"d M Y" }}</div>
+                {% if c.notes %}<div class="text-muted">{{ c.notes|truncatechars:60 }}</div>{% endif %}
+            </div>
+            {% empty %}
+            <div class="text-muted small">No consultations recorded.</div>
+            {% endfor %}
+        </div>
+        <div class="metric-card mb-3">
+            <h6>Long-term conditions</h6>
+            {% for cond in active_conditions %}
+            <div class="small py-1 border-bottom">
+                {{ cond.condition_name }}
+                <span class="text-muted">({{ cond.diagnosis_date|date:"Y" }})</span>
+            </div>
+            {% empty %}
+            <div class="text-muted small">None recorded.</div>
+            {% endfor %}
+        </div>
+        <div class="metric-card">
+            <h6>Active medications</h6>
+            {% for med in active_medications %}
+            <div class="small py-1 border-bottom">
+                {{ med.medication_name }} <span class="text-muted">{{ med.dosage }}</span>
+            </div>
+            {% empty %}
+            <div class="text-muted small">None recorded.</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% if alert_result.triggered %}
+{% include "patients/partials/alert_modal.html" %}
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chartLabels  = {{ chart_labels  | safe }};
+const chartWeight  = {{ chart_weight  | safe }};
+const chartBMI     = {{ chart_bmi     | safe }};
+const chartAlbumin = {{ chart_albumin | safe }};
+
+function makeChart(canvasId, data, colour, refLine) {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    const datasets = [{
+        data, borderColor: colour, backgroundColor: colour + '22',
+        borderWidth: 2, pointRadius: 4, tension: 0.3, fill: true,
+    }];
+    if (refLine !== undefined) {
+        datasets.push({
+            data: Array(data.length).fill(refLine),
+            borderColor: '#FF8C0055', borderWidth: 1, borderDash: [4, 4],
+            pointRadius: 0, fill: false,
+        });
+    }
+    new Chart(ctx, {
+        type: 'line',
+        data: { labels: chartLabels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { grid: { color: '#eee' } },
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+            }
+        }
+    });
+}
+
+makeChart('chartWeight',  chartWeight,  '#1a3c5e');
+makeChart('chartBMI',     chartBMI,     '#2e7d32', 18.5);
+makeChart('chartAlbumin', chartAlbumin, '#c62828', 3.5);
+</script>
+{% endblock %}
