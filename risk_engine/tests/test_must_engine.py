@@ -45,3 +45,41 @@ class BMIScoreTest(TestCase):
 
     def test_bmi_above_20_scores_0(self):
         self.assertEqual(calculate_must(make_consultation(bmi_override=23.5), empty_qs())["bmi_score"], 0)
+
+# test that weight loss scoring works as expected for different percentages of weight loss, including edge cases at the thresholds.
+# I will have to mock the queryset so that it can return a prior consultation with the specified weight and date.
+class WeightLossScoreTest(TestCase):
+    def _qs_with_prior(self, current_weight, prior_weight, days_prior=120):
+        today   = date.today()
+        current = make_consultation(weight_kg=current_weight, consult_date=today)
+        prior   = MagicMock()
+        prior.weight_kg         = prior_weight
+        prior.consultation_date = today - timedelta(days=days_prior)
+        qs = MagicMock()
+        qs.exists.return_value = True
+        
+        # Configure the chained calls to properly handle filter().exclude().order_by()
+        # and subsequent filter().order_by().first() to return the prior mock
+        chained_mock = MagicMock()
+        chained_mock.exists.return_value = True
+        chained_mock.filter.return_value.order_by.return_value.first.return_value = prior
+        chained_mock.exclude.return_value = chained_mock
+        chained_mock.order_by.return_value = chained_mock
+        
+        qs.filter.return_value = chained_mock
+        qs.exclude.return_value = chained_mock
+        qs.order_by.return_value = chained_mock
+        
+        return current, qs
+
+    def test_loss_over_10_pct_scores_2(self):
+        current, qs = self._qs_with_prior(55.0, 62.0)
+        self.assertEqual(calculate_must(current, qs)["weight_loss_score"], 2)
+
+    def test_loss_5_to_10_pct_scores_1(self):
+        current, qs = self._qs_with_prior(60.0, 65.0)
+        self.assertEqual(calculate_must(current, qs)["weight_loss_score"], 1)
+
+    def test_loss_under_5_pct_scores_0(self):
+        current, qs = self._qs_with_prior(69.0, 70.0)
+        self.assertEqual(calculate_must(current, qs)["weight_loss_score"], 0)
