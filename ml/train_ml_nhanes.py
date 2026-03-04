@@ -98,6 +98,82 @@ def resolve_columns(df: pd.DataFrame) -> pd.DataFrame:
     if missing:
         print(f"\n Missing columns: {missing}")
         print("     These will be excluded from features if unavailable.")
-        print("     Check your CSV column names against NHANES_COLUMN_MAP at the top of this script.")
+        print("     Check  CSV column names against NHANES_COLUMN_MAP at the top of the script.")
 
     return df
+
+# Step 4: Encode sex as 0 and 1
+
+def encode_sex(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    make sex_encoded is 0=Female, 1=Male, because NHANES uses RIAGENDR: 1=Male, 2=Female, so recode to 0/1.
+    """
+    if "sex_encoded" not in df.columns:
+        return df
+
+    # If NHANES encoding (1=Male, 2=Female), recode
+    if df["sex_encoded"].isin([1, 2]).all():
+        df["sex_encoded"] = df["sex_encoded"].map({1: 1, 2: 0})
+        print("\n sex_encoded recoded: NHANES 1→1 (Male), 2→0 (Female)")
+    # If already 0/1, leave as is
+    return df
+
+
+#Step 5: Create GLIM inspired binary label
+
+def create_label(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Create nutritional_risk_label using EXACT GLIM-inspired operational definition:
+        Label = 1 if:
+            (BMI < 18.5 OR albumin_gdl < 3.5)
+            AND
+            (comorbidity_count >= 1 OR polypharmacy_5plus == 1)
+
+        Label = 0 otherwise.
+    """
+    required = {"bmi", "albumin_gdl", "comorbidity_count", "polypharmacy_5plus"}
+    available = required.intersection(df.columns)
+    missing = required - available
+
+    print(f"\n{'='*60}")
+    print("  LABEL CREATION (GLIM-INSPIRED OPERATIONAL DEFINITION)")
+    print(f"{'='*60}")
+
+    if missing:
+        print(f"Missing columns for label creation: {missing}")
+        print(" Attempting partial label with available columns.")
+
+    # Nutritional criterion (phenotypic)
+    nutritional_criterion = pd.Series(False, index=df.index)
+    if "bmi" in df.columns:
+        nutritional_criterion |= df["bmi"] < 18.5
+    if "albumin_gdl" in df.columns:
+        nutritional_criterion |= df["albumin_gdl"] < 3.5
+
+    # Disease burden criterion (aetiology)
+    disease_criterion = pd.Series(False, index=df.index)
+    if "comorbidity_count" in df.columns:
+        disease_criterion |= df["comorbidity_count"] >= 1
+    if "polypharmacy_5plus" in df.columns:
+        disease_criterion |= df["polypharmacy_5plus"] == 1
+
+    df[LABEL_COL] = (nutritional_criterion & disease_criterion).astype(int)
+
+    # Report class balance
+    n_at_risk = df[LABEL_COL].sum()
+    n_total = len(df)
+    pct_risk = (n_at_risk / n_total) * 100
+
+    print(f"  Label = 1 (at risk):     {n_at_risk:,} ({pct_risk:.1f}%)")
+    print(f"  Label = 0 (not at risk): {n_total - n_at_risk:,} ({100 - pct_risk:.1f}%)")
+    print(f"  Class ratio (1:0):       1 : {(n_total - n_at_risk) / max(n_at_risk, 1):.1f}")
+
+    if pct_risk < 5:
+        print("Class imbalance is severe (<5% positive). class_weight='balanced' will compensate.")
+    elif pct_risk > 40:
+        print("Relatively balanced dataset.")
+
+    return df
+
+
+
