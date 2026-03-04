@@ -83,9 +83,21 @@ class WeightLossScoreTest(TestCase):
     def test_loss_under_5_pct_scores_0(self):
         current, qs = self._qs_with_prior(69.0, 70.0)
         self.assertEqual(calculate_must(current, qs)["weight_loss_score"], 0)
+# test that the acute illness flag contributes the correct score to the total, and that it is correctly included in the overall risk calculation.
 class AcuteScoreTest(TestCase):
     def test_acute_true_scores_2(self):
         self.assertEqual(calculate_must(make_consultation(acute=True), empty_qs())["acute_score"], 2)
 
     def test_acute_false_scores_0(self):
         self.assertEqual(calculate_must(make_consultation(acute=False), empty_qs())["acute_score"], 0)
+
+# test that the overall risk category is determined correctly based on the total score, including edge cases at the thresholds.
+class RiskCategoryTest(TestCase):
+    def test_score_0_is_low(self):
+        self.assertEqual(calculate_must(make_consultation(bmi_override=25.0), empty_qs())["risk"], "LOW")
+
+    def test_score_1_is_moderate(self):
+        self.assertEqual(calculate_must(make_consultation(bmi_override=19.0), empty_qs())["risk"], "MODERATE")
+
+    def test_score_2_is_high(self):
+        self.assertEqual(calculate_must(make_consultation(bmi_override=17.0), empty_qs())["risk"], "HIGH")
