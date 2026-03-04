@@ -212,3 +212,51 @@ def handle_missing(df: pd.DataFrame, features: list, use_impute: bool) -> pd.Dat
 
     return df
 
+# Step 7: Train and test split with a stratified 80/20 split.
+
+def split_data(df: pd.DataFrame, features: list):
+    
+    available_features = [f for f in features if f in df.columns]
+    missing_features = [f for f in features if f not in df.columns]
+
+    if missing_features:
+        print(f"\n Features excluded (not in data): {missing_features}")
+
+    X = df[available_features].values
+    y = df[LABEL_COL].values
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, stratify=y, random_state=RANDOM_STATE
+    )
+
+    print(f"\n{'='*60}")
+    print("  TRAIN / TEST SPLIT (80/20 stratified)")
+    print(f"{'='*60}")
+    print(f"  Training samples:  {len(X_train):,}  (label=1: {y_train.sum():,})")
+    print(f"  Test samples:      {len(X_test):,}  (label=1: {y_test.sum():,})")
+
+    return X_train, X_test, y_train, y_test, available_features
+
+# Step 8: Train model, scale features and train Logistic Regression.
+
+def train_model(X_train, y_train):
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+
+    model = LogisticRegression(
+        class_weight="balanced",
+        random_state=RANDOM_STATE,
+        max_iter=1000,
+        solver="lbfgs",
+    )
+    model.fit(X_train_scaled, y_train)
+
+    print(f"\n{'='*60}")
+    print("  MODEL TRAINING COMPLETE")
+    print(f"{'='*60}")
+    print(f"  Model type:       LogisticRegression")
+    print(f"  class_weight:     balanced")
+    print(f"  Solver:           lbfgs")
+    print(f"  Iterations used:  {model.n_iter_[0]}")
+
+    return model, scaler
