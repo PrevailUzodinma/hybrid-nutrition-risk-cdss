@@ -32,4 +32,16 @@ def empty_qs():
     qs.first.return_value = None
     
     return qs
+# test that BMI scoring works as expected for different BMI values, including edge cases at the thresholds.
+class BMIScoreTest(TestCase):
+    def test_bmi_below_18_5_scores_2(self):
+        self.assertEqual(calculate_must(make_consultation(bmi_override=17.9), empty_qs())["bmi_score"], 2)
 
+    def test_bmi_at_18_5_scores_1(self):
+        self.assertEqual(calculate_must(make_consultation(bmi_override=18.5), empty_qs())["bmi_score"], 1)
+
+    def test_bmi_at_20_scores_1(self):
+        self.assertEqual(calculate_must(make_consultation(bmi_override=20.0), empty_qs())["bmi_score"], 1)
+
+    def test_bmi_above_20_scores_0(self):
+        self.assertEqual(calculate_must(make_consultation(bmi_override=23.5), empty_qs())["bmi_score"], 0)
