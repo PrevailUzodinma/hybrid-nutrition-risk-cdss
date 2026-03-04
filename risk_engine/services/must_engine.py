@@ -38,3 +38,53 @@ def calculate_must(consultation, all_consultations_qs):
     else:
         bmi_score = 0
         bmi_detail = f"BMI {bmi} - normal (>20.0)"
+
+    # Component 2: Unintentional weight loss over 3–6 months 
+    weight_loss_score = 0
+    weight_loss_pct   = None
+    weight_detail     = "No prior weight data available within 3-6 month window"
+
+    past = all_consultations_qs.filter(
+        consultation_date_lt=consultation.consultation_date
+    ).exclude(weight_kg_isnull=True).order_by("consultation_date")
+
+    if past.exists() and consultation.weight_kg:
+        current_date = consultation.consultation_date
+        window_start = current_date - timedelta(days=180)
+        window_end   = current_date - timedelta(days=60)
+
+        reference = past.filter(
+            consultation_date_gte=window_start,
+            consultation_date_lte=window_end,
+        ).order_by("-consultation_date").first()
+
+        # fallback: 30–210 days if there is nothing in ideal window
+        if not reference:
+            reference = past.filter(
+                consultation_date_gte=current_date - timedelta(days=210),
+                consultation_date_lt=current_date,
+            ).order_by("-consultation_date").first()
+
+        if reference and reference.weight_kg:
+            weight_loss_pct = (
+                (reference.weight_kg - consultation.weight_kg) / reference.weight_kg
+            ) * 100
+
+            if weight_loss_pct > 10:
+                weight_loss_score = 2
+                weight_detail = (
+                    f"Unintentional weight loss >10%: {weight_loss_pct:.1f}% "
+                    f"({reference.weight_kg:.1f} kg → {consultation.weight_kg:.1f} kg "
+                    f"since {reference.consultation_date})"
+                )
+            elif weight_loss_pct > 5:
+                weight_loss_score = 1
+                weight_detail = (
+                    f"Unintentional weight loss 5-10%: {weight_loss_pct:.1f}% "
+                    f"({reference.weight_kg:.1f} kg → {consultation.weight_kg:.1f} kg "
+                    f"since {reference.consultation_date})"
+                )
+            elif weight_loss_pct > 0:
+                weight_detail = f"Minor weight change: {weight_loss_pct:.1f}% — below threshold"
+            else:
+                weight_detail = f"No weight loss (change: {weight_loss_pct:.1f}%)"
