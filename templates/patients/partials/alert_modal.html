@@ -11,6 +11,8 @@
             </div>
 
             <div class="modal-body">
+
+                {# ── Alert source summary ── #}
                 <div class="mb-3 p-3 rounded" style="background:#f8f9fa;">
                     <strong>Alert triggered by:</strong>
                     {% if alert_result.source == "BOTH" %}
@@ -25,8 +27,9 @@
                     <p class="mt-2 mb-0 small text-muted">{{ alert_result.summary_text }}</p>
                 </div>
 
+                {# ── MUST table ── #}
                 {% if must_result %}
-                <h6 class="fw-bold mb-2">📋 Rule-Based Screening (MUST)</h6>
+                <h6 class="fw-bold mb-2">Rule-Based Screening (MUST)</h6>
                 <table class="table table-sm table-bordered small mb-3">
                     <thead class="table-light">
                         <tr><th>Component</th><th>Score</th><th>Detail</th></tr>
@@ -47,9 +50,7 @@
                             <td><strong>{{ must_result.acute_score }}</strong></td>
                             <td>{{ must_result.acute_detail }}</td>
                         </tr>
-                        <tr class="table-{% if must_result.risk == 'HIGH' %}danger
-                                         {% elif must_result.risk == 'MODERATE' %}warning
-                                         {% else %}success{% endif %}">
+                        <tr class="table-{% if must_result.risk == 'HIGH' %}danger{% elif must_result.risk == 'MODERATE' %}warning{% else %}success{% endif %}">
                             <td><strong>Total MUST score</strong></td>
                             <td><strong>{{ must_result.total_score }}</strong></td>
                             <td><strong>{{ must_result.risk }} risk</strong></td>
@@ -58,10 +59,10 @@
                 </table>
                 {% endif %}
 
+                {# ── ML section ── #}
                 {% if ml_result %}
                 <h6 class="fw-bold mb-2">
-                    🤖 ML Pattern Analysis
-                    <small class="fw-normal text-muted">(Logistic Regression — NHANES 2017-2018)</small>
+                    ML Pattern Analysis
                 </h6>
                 <p class="small mb-2">
                     Probability of nutritional risk:
@@ -84,22 +85,21 @@
                 </div>
                 {% endif %}
 
-                <div class="alert alert-secondary small mb-3">
-                    <strong>⚕ Clinical note:</strong>
-                    Both MUST and ML assessments are shown for full transparency.
-                    This system provides decision support only — you remain the clinical
-                    decision maker. This nutritional alert (🟠 amber) is distinct from
-                    critical clinical alerts (🔴 red).
-                </div>
 
+                <p class="small text-muted mb-3" style="border-left:3px solid #dee2e6; padding-left:10px;">
+                    ⚕ Decision support only - clinical judgement remains with the clinician.
+                </p>
+
+                {# ── Next steps ── #}
                 {% if alert_result.next_steps %}
-                <h6 class="fw-bold mb-2">💡 Suggested next steps</h6>
+                <h6 class="fw-bold mb-2">Suggested next steps</h6>
                 <ul class="small">
                     {% for step in alert_result.next_steps %}
                     <li class="mb-1">{{ step }}</li>
                     {% endfor %}
                 </ul>
                 {% endif %}
+
             </div>
 
             <div class="modal-footer">

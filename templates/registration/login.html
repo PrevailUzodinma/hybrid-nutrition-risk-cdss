@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Login — NutriCDSS{% endblock %}
+{% block title %}Login — NutriRisk Assistant{% endblock %}
 {% block content %}
 <div class="row justify-content-center mt-5">
     <div class="col-md-4">
         <div class="card shadow-sm border-0">
             <div class="card-body p-4">
-                <h4 class="mb-1 text-center" style="color:#1a3c5e">NutriCDSS</h4>
+                <h4 class="mb-1 text-center" style="color:#1a3c5e">NutriRisk Assistant</h4>
                 <p class="text-center text-muted small mb-4">GP Consultation Portal</p>
                 <form method="post">
                     {% csrf_token %}
@@ -20,6 +20,7 @@
                     {% if form.errors %}
                     <div class="alert alert-danger py-2 small">Invalid username or password.</div>
                     {% endif %}
+                    <input type="hidden" name="next" value="{% url 'appointments:appointment_list' %}">
                     <button type="submit" class="btn btn-primary w-100"
                             style="background:#1a3c5e; border-color:#1a3c5e;">Sign In</button>
                 </form>
