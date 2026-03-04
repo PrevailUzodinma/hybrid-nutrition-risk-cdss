@@ -1,40 +1,48 @@
 {% extends "base.html" %}
-{% block title %}{{ patient.last_name }}, {{ patient.first_name }} — NutriCDSS{% endblock %}
+{% block title %}{{ patient.last_name }}, {{ patient.first_name }} — NutriRisk Assistant{% endblock %}
 {% block content %}
 
 <a href="{% url 'appointments:appointment_list' %}" class="text-decoration-none text-muted small">
     &larr; Back to clinic list
 </a>
 
-<div class="patient-header mt-2">
-    <div class="d-flex justify-content-between align-items-start">
+{# ── Patient Header ───────────────────────────────────────────────────────── #}
+<div class="patient-header mt-2 mb-3">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         <div>
-            <h5>{{ patient.last_name }}, {{ patient.first_name }}</h5>
-            <small>
-                DOB: {{ patient.date_of_birth|date:"d/m/Y" }} &nbsp;&middot;&nbsp;
-                Age: {{ patient.age }} &nbsp;&middot;&nbsp;
-                {{ patient.get_sex_display }} &nbsp;&middot;&nbsp;
-                NHS: {{ patient.nhs_number }}
-            </small>
+            <h5 class="mb-2">{{ patient.last_name }}, {{ patient.first_name }}</h5>
+            <div class="d-flex gap-4" style="font-size:0.83rem; opacity:0.85;">
+                <span><span style="opacity:0.65;">DOB</span>&nbsp;&nbsp;{{ patient.date_of_birth|date:"d/m/Y" }}</span>
+                <span><span style="opacity:0.65;">Age</span>&nbsp;&nbsp;{{ patient.age }}</span>
+                <span><span style="opacity:0.65;">Sex</span>&nbsp;&nbsp;{{ patient.get_sex_display }}</span>
+            </div>
         </div>
-        {% if latest_consultation %}
-        <small class="opacity-75">Last seen: {{ latest_consultation.consultation_date|date:"d M Y" }}</small>
-        {% endif %}
+        <div class="text-end" style="min-width:160px;">
+            <div style="font-size:0.7rem; opacity:0.6; text-transform:uppercase; letter-spacing:0.07em;">NHS Number</div>
+            <div style="font-size:1.05rem; font-weight:600; letter-spacing:0.05em;">{{ patient.nhs_number }}</div>
+            {% if latest_consultation %}
+            <div style="font-size:0.78rem; opacity:0.65; margin-top:5px;">
+                Last seen: {{ latest_consultation.consultation_date|date:"d M Y" }}
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 
+{# ── Alert Banner ─────────────────────────────────────────────────────────── #}
 {% if alert_result.triggered %}
 {% include "patients/partials/alert_banner.html" %}
 {% endif %}
 
+{# ── Metric Cards ─────────────────────────────────────────────────────────── #}
 {% if latest_consultation %}
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-3">
     <div class="col-6 col-md-3">
         <div class="metric-card">
             <h6>Weight</h6>
             <div class="metric-value">{{ latest_consultation.weight_kg|default:"—" }}
                 <small class="fs-6 fw-normal">kg</small></div>
-            <div class="metric-sub">at {{ latest_consultation.consultation_date|date:"d M Y" }}</div>
+            <div class="metric-sub">{{ latest_consultation.consultation_date|date:"d M Y" }}</div>
         </div>
     </div>
     <div class="col-6 col-md-3">
@@ -76,24 +84,67 @@
 </div>
 {% endif %}
 
-<div class="row g-3">
-    <div class="col-md-8">
-        <div class="metric-card mb-3">
-            <h6>Weight trend (kg)</h6>
-            <div class="chart-container"><canvas id="chartWeight"></canvas></div>
-        </div>
-        <div class="metric-card mb-3">
-            <h6>BMI trend</h6>
-            <div class="chart-container"><canvas id="chartBMI"></canvas></div>
-        </div>
-        <div class="metric-card">
-            <h6>Serum albumin trend (g/dL)</h6>
-            <div class="chart-container"><canvas id="chartAlbumin"></canvas></div>
+{# ── Tabbed Charts + Sidebar ──────────────────────────────────────────────── #}
+<div class="row g-3 align-items-stretch">
+
+    {# Chart column — stretches to full row height #}
+    <div class="col-md-8 d-flex flex-column">
+        <div class="metric-card flex-grow-1 d-flex flex-column">
+
+            {# Tab buttons #}
+            <ul class="nav nav-tabs mb-3" id="chartTabs" role="tablist"
+                style="border-bottom:1px solid #e0e0e0; margin: -4px -4px 12px -4px;">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-weight" data-bs-toggle="tab"
+                            data-bs-target="#pane-weight" type="button" role="tab"
+                            style="font-size:0.82rem; color:#1a3c5e; padding:8px 16px;">
+                        ⚖ Weight
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-bmi" data-bs-toggle="tab"
+                            data-bs-target="#pane-bmi" type="button" role="tab"
+                            style="font-size:0.82rem; color:#1a3c5e; padding:8px 16px;">
+                        📊 BMI
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-albumin" data-bs-toggle="tab"
+                            data-bs-target="#pane-albumin" type="button" role="tab"
+                            style="font-size:0.82rem; color:#1a3c5e; padding:8px 16px;">
+                        🧪 Albumin
+                    </button>
+                </li>
+            </ul>
+
+            {# Tab panes #}
+            <div class="tab-content flex-grow-1" id="chartTabContent">
+                <div class="tab-pane fade show active" id="pane-weight" role="tabpanel">
+                    <div class="small text-muted mb-2">Weight over time (kg)</div>
+                    <div class="chart-container" style="height:260px;">
+                        <canvas id="chartWeight"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="pane-bmi" role="tabpanel">
+                    <div class="small text-muted mb-2">BMI over time — dashed line at 18.5 (underweight threshold)</div>
+                    <div class="chart-container" style="height:260px;">
+                        <canvas id="chartBMI"></canvas>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="pane-albumin" role="tabpanel">
+                    <div class="small text-muted mb-2">Serum albumin over time (g/dL) — dashed line at 3.5 (low threshold)</div>
+                    <div class="chart-container" style="height:260px;">
+                        <canvas id="chartAlbumin"></canvas>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="metric-card mb-3">
+    {# Sidebar column — three stacked cards #}
+    <div class="col-md-4 d-flex flex-column gap-3">
+        <div class="metric-card">
             <h6>Recent consultations</h6>
             {% for c in all_consultations %}
             <div class="border-bottom py-2 small">
@@ -104,7 +155,7 @@
             <div class="text-muted small">No consultations recorded.</div>
             {% endfor %}
         </div>
-        <div class="metric-card mb-3">
+        <div class="metric-card">
             <h6>Long-term conditions</h6>
             {% for cond in active_conditions %}
             <div class="small py-1 border-bottom">
@@ -126,8 +177,10 @@
             {% endfor %}
         </div>
     </div>
+
 </div>
 
+{# ── Alert Modal ──────────────────────────────────────────────────────────── #}
 {% if alert_result.triggered %}
 {% include "patients/partials/alert_modal.html" %}
 {% endif %}
@@ -140,6 +193,7 @@
 {{ chart_weight|json_script:"chart-weight" }}
 {{ chart_bmi|json_script:"chart-bmi" }}
 {{ chart_albumin|json_script:"chart-albumin" }}
+
 <script>
 const chartLabels  = JSON.parse(document.getElementById('chart-labels').textContent);
 const chartWeight  = JSON.parse(document.getElementById('chart-weight').textContent);
@@ -155,11 +209,11 @@ function makeChart(canvasId, data, colour, refLine) {
     if (refLine !== undefined) {
         datasets.push({
             data: Array(data.length).fill(refLine),
-            borderColor: '#FF8C0055', borderWidth: 1, borderDash: [4, 4],
+            borderColor: '#FF8C0055', borderWidth: 1.5, borderDash: [5, 4],
             pointRadius: 0, fill: false,
         });
     }
-    new Chart(ctx, {
+    return new Chart(ctx, {
         type: 'line',
         data: { labels: chartLabels, datasets },
         options: {
@@ -176,5 +230,12 @@ function makeChart(canvasId, data, colour, refLine) {
 makeChart('chartWeight',  chartWeight,  '#1a3c5e');
 makeChart('chartBMI',     chartBMI,     '#2e7d32', 18.5);
 makeChart('chartAlbumin', chartAlbumin, '#c62828', 3.5);
+
+// Resize charts when tab is shown so Chart.js fills the container correctly
+document.querySelectorAll('#chartTabs button').forEach(btn => {
+    btn.addEventListener('shown.bs.tab', () => {
+        Object.values(Chart.instances).forEach(c => c.resize());
+    });
+});
 </script>
 {% endblock %}
