@@ -22,6 +22,19 @@ def calculate_must(consultation, all_consultations_qs):
         all_consultations_qs: QuerySet of ALL consultations for this patient,
                               ordered by consultation_date in ascending order. I'll Use it to find
                               the weight reference visit for the 3-6 month window.
+
+        Returns:
+        dict with keys:
+            bmi_score           (int: 0/1/2)
+            weight_loss_score   (int: 0/1/2)
+            acute_score         (int: 0/2)
+            total_score         (int: 0-6)
+            risk                (str: "LOW" / "MODERATE" / "HIGH")
+            explanation         (str: full human-readable summary)
+            bmi_detail          (str: per-component explanation)
+            weight_detail       (str: per-component explanation)
+            acute_detail        (str: per-component explanation)
+            weight_loss_pct     (float | None)
     """
 
     # Component 1: BMI
@@ -96,3 +109,30 @@ def calculate_must(consultation, all_consultations_qs):
         acute_score  = 0
         acute_detail = "No acute illness effect"
 
+    # Total score + risk category 
+    total_score = bmi_score + weight_loss_score + acute_score
+
+    if total_score >= 2:
+        risk = "HIGH"
+    elif total_score == 1:
+        risk = "MODERATE"
+    else:
+        risk = "LOW"
+
+    explanation = (
+        f"MUST score = {total_score} ({risk} risk). "
+        f"{bmi_detail}. {weight_detail}. {acute_detail}."
+    )
+
+    return {
+        "bmi_score":         bmi_score,
+        "weight_loss_score": weight_loss_score,
+        "acute_score":       acute_score,
+        "total_score":       total_score,
+        "risk":              risk,
+        "explanation":       explanation,
+        "bmi_detail":        bmi_detail,
+        "weight_detail":     weight_detail,
+        "acute_detail":      acute_detail,
+        "weight_loss_pct":   weight_loss_pct,
+    }
