@@ -175,5 +175,40 @@ def create_label(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
+# Step 6: Report missingness and handle via complete-case or median imputation.
+def handle_missing(df: pd.DataFrame, features: list, use_impute: bool) -> pd.DataFrame:
+    print(f"\n{'='*60}")
+    print(f"  MISSINGNESS SUMMARY (features + label)")
+    print(f"{'='*60}")
 
+    cols_to_check = features + [LABEL_COL]
+    for col in cols_to_check:
+        if col in df.columns:
+            n_missing = df[col].isna().sum()
+            pct_missing = (n_missing / len(df)) * 100
+            flag = "missing" if pct_missing > 20 else ""
+            print(f"  {col:<25} {n_missing:>5} missing  ({pct_missing:5.1f}%){flag}")
+
+    before = len(df)
+
+    if use_impute:
+        print(f"\n  Strategy: MEDIAN IMPUTATION")
+        for col in features:
+            if col in df.columns and df[col].isna().any():
+                median_val = df[col].median()
+                df[col] = df[col].fillna(median_val)
+                print(f"    '{col}' imputed with median = {median_val:.3f}")
+        # Drop rows where label is still missing
+        df = df.dropna(subset=[LABEL_COL])
+    else:
+        print(f"\n  Strategy: COMPLETE CASE ANALYSIS")
+        available_features = [f for f in features if f in df.columns]
+        df = df.dropna(subset=available_features + [LABEL_COL])
+
+    after = len(df)
+    print(f"\n  Rows before handling: {before:,}")
+    print(f"  Rows after handling:  {after:,}")
+    print(f"  Rows dropped:         {before - after:,}")
+
+    return df
 
