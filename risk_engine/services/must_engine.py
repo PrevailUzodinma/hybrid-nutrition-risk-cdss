@@ -88,3 +88,11 @@ def calculate_must(consultation, all_consultations_qs):
                 weight_detail = f"Minor weight change: {weight_loss_pct:.1f}% — below threshold"
             else:
                 weight_detail = f"No weight loss (change: {weight_loss_pct:.1f}%)"
+    # Component 3: Acute illness 
+    if consultation.acute_illness_flag:
+        acute_score  = 2
+        acute_detail = "Acute illness with no nutritional intake >5 days — score 2"
+    else:
+        acute_score  = 0
+        acute_detail = "No acute illness effect"
+
