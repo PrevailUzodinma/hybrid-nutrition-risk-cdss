@@ -260,3 +260,43 @@ def train_model(X_train, y_train):
     print(f"  Iterations used:  {model.n_iter_[0]}")
 
     return model, scaler
+
+# ── Step 9: Evaluate model ─────────────────────────────────────────────────────
+
+def evaluate_model(model, scaler, X_test, y_test, feature_names):
+    """Print full evaluation metrics."""
+    X_test_scaled = scaler.transform(X_test)
+    y_pred = model.predict(X_test_scaled)
+    y_prob = model.predict_proba(X_test_scaled)[:, 1]
+
+    roc_auc = roc_auc_score(y_test, y_prob)
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, zero_division=0)
+    recall = recall_score(y_test, y_pred, zero_division=0)
+    f1 = f1_score(y_test, y_pred, zero_division=0)
+    cm = confusion_matrix(y_test, y_pred)
+
+    print(f"\n{'='*60}")
+    print("  EVALUATION METRICS (test set)")
+    print(f"{'='*60}")
+    print(f"  ROC AUC:    {roc_auc:.4f}")
+    print(f"  Accuracy:   {accuracy:.4f}")
+    print(f"  Precision:  {precision:.4f}")
+    print(f"  Recall:     {recall:.4f}   ← prioritised (clinical: miss fewer at-risk patients)")
+    print(f"  F1-score:   {f1:.4f}")
+    print(f"\n  Confusion matrix:")
+    print(f"                  Predicted 0    Predicted 1")
+    print(f"  Actual 0:       {cm[0][0]:>10,}     {cm[0][1]:>10,}  (true neg / false pos)")
+    print(f"  Actual 1:       {cm[1][0]:>10,}     {cm[1][1]:>10,}  (false neg / true pos)")
+    print(f"\n  Classification report:")
+    print(classification_report(y_test, y_pred, target_names=["Not at risk", "At risk"]))
+
+    # Feature coefficients (interpretability — key for dissertation)
+    print(f"{'='*60}")
+    print("  FEATURE COEFFICIENTS (log-odds; ranked by absolute value)")
+    print(f"{'='*60}")
+    coefs = model.coef_[0]
+    sorted_idx = np.argsort(np.abs(coefs))[::-1]
+    for i in sorted_idx:
+        direction = "↑ risk" if coefs[i] > 0 else "↓ risk"
+        print(f"  {feature_names[i]:<25}  coef = {coefs[i]:+.4f}   ({direction})")
