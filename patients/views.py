@@ -68,7 +68,7 @@ def patient_record(request, patient_id):
         "active_conditions":    patient.conditions.filter(is_active=True).order_by("diagnosis_date"),
         "must_result":          must_result,
         "ml_result":            ml_result,
-        "ml_probability_pct":   ml_probability_pct,   # ← use this in template, not ml_result.probability
+        "ml_probability_pct":   ml_probability_pct,
         "alert_result":         alert_result,
         "risk_assessment":      risk_assessment,
         "chart_labels":         chart_labels,

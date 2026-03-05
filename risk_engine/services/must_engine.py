@@ -58,8 +58,8 @@ def calculate_must(consultation, all_consultations_qs):
     weight_detail     = "No prior weight data available within 3-6 month window"
 
     past = all_consultations_qs.filter(
-        consultation_date_lt=consultation.consultation_date
-    ).exclude(weight_kg_isnull=True).order_by("consultation_date")
+        consultation_date__lt=consultation.consultation_date
+    ).exclude(weight_kg__isnull=True).order_by("consultation_date")
 
     if past.exists() and consultation.weight_kg:
         current_date = consultation.consultation_date
@@ -67,15 +67,15 @@ def calculate_must(consultation, all_consultations_qs):
         window_end   = current_date - timedelta(days=60)
 
         reference = past.filter(
-            consultation_date_gte=window_start,
-            consultation_date_lte=window_end,
+            consultation_date__gte=window_start,
+            consultation_date__lte=window_end,
         ).order_by("-consultation_date").first()
 
         # fallback: 30–210 days if there is nothing in ideal window
         if not reference:
             reference = past.filter(
-                consultation_date_gte=current_date - timedelta(days=210),
-                consultation_date_lt=current_date,
+                consultation_date__gte=current_date - timedelta(days=210),
+                consultation_date__lt=current_date,
             ).order_by("-consultation_date").first()
 
         if reference and reference.weight_kg:

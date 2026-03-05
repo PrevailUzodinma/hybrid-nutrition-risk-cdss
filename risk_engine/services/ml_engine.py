@@ -17,7 +17,7 @@ FEATURE_NAMES = [
     "albumin_gdl",
     "haemoglobin_gdl",
     "comorbidity_count",
-    "polypharmacy_flag",
+    "polypharmacy_5plus",
 ]
 
 FEATURE_LABELS = {
@@ -27,7 +27,7 @@ FEATURE_LABELS = {
     "albumin_gdl":        "Serum albumin",
     "haemoglobin_gdl":    "Haemoglobin",
     "comorbidity_count":  "Number of long-term conditions",
-    "polypharmacy_flag":  "Polypharmacy (≥5 medications)",
+    "polypharmacy_5plus":  "Polypharmacy (≥5 medications)",
 }
 
 
