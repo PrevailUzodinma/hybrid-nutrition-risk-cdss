@@ -1,117 +1,235 @@
-<div class="modal fade" id="alertModal" tabindex="-1"
-     aria-labelledby="alertModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header modal-header-amber">
-                <h5 class="modal-title" id="alertModalLabel">
-                    {{ alert_result.emoji }} Nutritional Risk Assessment Details
-                </h5>
-                <button type="button" class="btn-close"
-                        data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-sm">
+
+            <div class="px-4 pt-4 pb-3 modal-header-{% if alert_result.level == 'HIGH' %}amber{% else %}yellow{% endif %}">
+                <div class="d-flex align-items-start justify-content-between">
+                    <div>
+                        <div class="fw-bold fs-6 mb-1">
+                            {{ alert_result.emoji }}&nbsp;{% if alert_result.source == "BOTH" %}MUST + ML: Nutritional Risk Detected{% elif alert_result.source == "MUST" %}MUST Screening: High Risk{% elif alert_result.source == "ML" %}ML Analysis: High Risk{% elif alert_result.source == "MUST_MODERATE" %}MUST: Borderline Concern{% endif %}
+                        </div>
+                        <div class="small text-muted">Decision support only &mdash; clinical judgement takes precedence</div>
+                    </div>
+                    <button type="button" class="btn-close mt-1" data-bs-dismiss="modal"></button>
+                </div>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body px-4 py-3">
 
-                {# ── Alert source summary ── #}
-                <div class="mb-3 p-3 rounded" style="background:#f8f9fa;">
-                    <strong>Alert triggered by:</strong>
-                    {% if alert_result.source == "BOTH" %}
-                        <span class="badge bg-warning text-dark ms-2">MUST + ML (both)</span>
-                    {% elif alert_result.source == "MUST" %}
-                        <span class="badge bg-warning text-dark ms-2">MUST (rule-based)</span>
-                    {% elif alert_result.source == "ML" %}
-                        <span class="badge bg-info text-dark ms-2">ML pattern detection</span>
-                    {% elif alert_result.source == "MUST_MODERATE" %}
-                        <span class="badge bg-secondary ms-2">MUST moderate</span>
-                    {% endif %}
-                    <p class="mt-2 mb-0 small text-muted">{{ alert_result.summary_text }}</p>
-                </div>
-
-                {# ── MUST table ── #}
                 {% if must_result %}
-                <h6 class="fw-bold mb-2">Rule-Based Screening (MUST)</h6>
-                <table class="table table-sm table-bordered small mb-3">
-                    <thead class="table-light">
-                        <tr><th>Component</th><th>Score</th><th>Detail</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>BMI</td>
-                            <td><strong>{{ must_result.bmi_score }}</strong></td>
-                            <td>{{ must_result.bmi_detail }}</td>
-                        </tr>
-                        <tr>
-                            <td>Weight loss (3–6 months)</td>
-                            <td><strong>{{ must_result.weight_loss_score }}</strong></td>
-                            <td>{{ must_result.weight_detail }}</td>
-                        </tr>
-                        <tr>
-                            <td>Acute illness effect</td>
-                            <td><strong>{{ must_result.acute_score }}</strong></td>
-                            <td>{{ must_result.acute_detail }}</td>
-                        </tr>
-                        <tr class="table-{% if must_result.risk == 'HIGH' %}danger{% elif must_result.risk == 'MODERATE' %}warning{% else %}success{% endif %}">
-                            <td><strong>Total MUST score</strong></td>
-                            <td><strong>{{ must_result.total_score }}</strong></td>
-                            <td><strong>{{ must_result.risk }} risk</strong></td>
-                        </tr>
-                    </tbody>
-                </table>
-                {% endif %}
-
-                {# ── ML section ── #}
-                {% if ml_result %}
-                <h6 class="fw-bold mb-2">
-                    ML Pattern Analysis
-                </h6>
-                <p class="small mb-2">
-                    Probability of nutritional risk:
-                    <strong>{{ ml_result.probability|floatformat:0 }}%</strong>
-                    &nbsp;—&nbsp;
-                    {% if ml_result.risk_flag %}
-                    <span class="text-danger fw-semibold">HIGH risk flag raised</span>
-                    {% else %}
-                    <span class="text-success">risk flag not raised</span>
-                    {% endif %}
-                </p>
-                <div class="mb-3">
-                    <div class="small text-muted mb-1">Top contributing factors:</div>
-                    {% for factor in ml_result.top_factors %}
-                    <span class="factor-pill">
-                        {{ factor.label }} ({{ factor.raw_value|floatformat:1 }})
-                        — {{ factor.direction }} risk
-                    </span>
-                    {% endfor %}
+                <div class="mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="section-label">MUST SCORE</span>
+                        <span class="badge {% if must_result.risk == 'HIGH' %}bg-danger{% elif must_result.risk == 'MODERATE' %}bg-warning text-dark{% else %}bg-success{% endif %}" style="font-size:.78rem;">
+                            {{ must_result.total_score }} &mdash; {{ must_result.risk }}
+                        </span>
+                    </div>
+                    <div class="must-table-wrap">
+                        <table class="table table-sm table-borderless small mb-0">
+                            <tbody>
+                                <tr>
+                                    <td class="ps-3 text-muted" style="width:44%; padding-top:10px;">BMI</td>
+                                    <td class="text-center fw-bold" style="width:10%; padding-top:10px;">{{ must_result.bmi_score }}</td>
+                                    <td class="pe-3 text-muted" style="padding-top:10px;">{{ must_result.bmi_detail|safe }}</td>
+                                </tr>
+                                <tr class="must-row-divider">
+                                    <td class="ps-3 text-muted py-2">Weight loss (3–6 months)</td>
+                                    <td class="text-center fw-bold py-2">{{ must_result.weight_loss_score }}</td>
+                                    <td class="pe-3 text-muted py-2">{{ must_result.weight_detail }}</td>
+                                </tr>
+                                <tr class="must-row-divider">
+                                    <td class="ps-3 text-muted" style="padding-bottom:10px;">Acute illness</td>
+                                    <td class="text-center fw-bold" style="padding-bottom:10px;">{{ must_result.acute_score }}</td>
+                                    <td class="pe-3 text-muted" style="padding-bottom:10px;">{{ must_result.acute_detail }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 {% endif %}
 
-
-                <p class="small text-muted mb-3" style="border-left:3px solid #dee2e6; padding-left:10px;">
-                    ⚕ Decision support only - clinical judgement remains with the clinician.
-                </p>
-
-                {# ── Next steps ── #}
-                {% if alert_result.next_steps %}
-                <h6 class="fw-bold mb-2">Suggested next steps</h6>
-                <ul class="small">
-                    {% for step in alert_result.next_steps %}
-                    <li class="mb-1">{{ step }}</li>
-                    {% endfor %}
-                </ul>
+                {% if ml_result %}
+                <div class="mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="section-label">ML ANALYSIS</span>
+                        <span class="badge {% if ml_result.risk_flag %}bg-danger{% else %}bg-success{% endif %}" style="font-size:.78rem;">
+                            {{ ml_probability_pct|floatformat:0 }}% &mdash; {% if ml_result.risk_flag %}HIGH{% else %}LOW{% endif %}
+                        </span>
+                    </div>
+                    <p class="small mb-3" style="color:#374151; line-height:1.7;">{{ ml_result.explanation }}</p>
+                    <div class="section-label mb-2">Top contributing factors</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for factor in ml_result.top_factors %}
+                        <span class="factor-pill">
+                            {{ factor.label }}
+                            <span class="factor-value">({{ factor.display_value }})</span>
+                            <span class="{% if factor.direction == 'increases' %}text-danger{% else %}text-success{% endif %} fw-bold">
+                                {% if factor.direction == 'increases' %}&uarr;{% else %}&darr;{% endif %}
+                            </span>
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endif %}
 
+                {% if alert_result.next_steps %}
+                <div class="mb-4">
+                    <div class="section-label mb-2">SUGGESTED ACTIONS</div>
+                    <ul class="small mb-0 ps-3" style="color:#444; line-height:1.8;">
+                        {% for step in alert_result.next_steps %}
+                        <li>{{ step }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <div id="referralPanel" style="display:none;" class="p-3 rounded border">
+                    <div class="section-label mb-2">PRE-POPULATED REFFERAL</div>
+                    <div class="row g-2 small mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold mb-1">Patient</label>
+                            <input type="text" class="form-control form-control-sm" value="{{ patient.last_name }}, {{ patient.first_name }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold mb-1">NHS Number</label>
+                            <input type="text" class="form-control form-control-sm" value="{{ patient.nhs_number }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold mb-1">Date of Birth</label>
+                            <input type="text" class="form-control form-control-sm" value="{{ patient.date_of_birth|date:'d/m/Y' }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold mb-1">Referral Date</label>
+                            <input type="text" class="form-control form-control-sm" id="referralDate">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold mb-1">Referring Clinician</label>
+                            <input type="text" class="form-control form-control-sm" value="{{ request.user.get_full_name|default:request.user.username }}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold mb-1">Refer To</label>
+                            <input type="text" class="form-control form-control-sm" value="Community Dietitian / Nutrition Support Team">
+                        </div>
+                    </div>
+                    <div class="small mb-2" style="color:#555;">
+                        <span class="fw-semibold">Clinical Summary </span>
+                        pre-filled from this assessment. You can add your notes under <em>Additional Notes</em> at the bottom, then copy.
+                    </div>
+                    <textarea class="form-control form-control-sm" rows="11" id="referralSummary"
+                              placeholder="Click Pre-populate referral to generate..."
+                              style="font-family:monospace; font-size:.8rem; line-height:1.7;"></textarea>
+                    <div class="mt-2 d-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="copyReferral(this)">📋 Copy to clipboard</button>
+                        <button class="btn btn-link btn-sm text-muted p-0" onclick="document.getElementById('referralPanel').style.display='none'">Hide</button>
+                    </div>
+                </div>
+
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary btn-sm"
-                        data-bs-dismiss="modal">Dismiss</button>
-                <button type="button" class="btn btn-secondary btn-sm"
-                        data-bs-dismiss="modal">Mark as reviewed</button>
-                <button type="button" class="btn btn-primary btn-sm"
-                        style="background:#1a3c5e;" data-bs-dismiss="modal">
-                    Pre-populate referral
-                </button>
+            <div class="modal-footer border-0 px-4 pb-4 pt-2" style="background:#fafafa;">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="markAsReviewed()">Mark as reviewed</button>
+                <button type="button" class="btn btn-sm text-white fw-semibold cdss-btn-primary" onclick="showReferral()">Pre-populate referral</button>
             </div>
+
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var patientId  = "{{ patient.id }}";
+    var urgentText = "{% if alert_result.level == 'HIGH' %}Yes — HIGH risk{% else %}No — routine{% endif %}";
+    var mustScore  = "{{ must_result.total_score|default:'' }}";
+    var mustRisk   = "{{ must_result.risk|default:'' }}";
+    var mlProb     = "{{ ml_probability_pct|floatformat:0|default:'' }}";
+    var bmi        = "{{ latest_consultation.bmi|floatformat:1|default:'' }}";
+    var weight     = "{{ latest_consultation.weight_kg|default:'' }}";
+    var albumin    = "{{ latest_consultation.albumin_gdl|default:'' }}";
+
+    
+    // Hides the alert banner if already reviewed this session
+    function applyReviewedState() {
+        if (sessionStorage.getItem('alert_reviewed_' + patientId) === 'true') {
+            var banner = document.getElementById('alertBanner');
+            if (banner) banner.style.display = 'none';
+        }
+    }
+    applyReviewedState();
+    // Also run after DOM ready in case partial loads after script
+    document.addEventListener('DOMContentLoaded', applyReviewedState);
+
+    window.markAsReviewed = function () {
+        sessionStorage.setItem('alert_reviewed_' + patientId, 'true');
+
+        // Hide banner immediately
+        var banner = document.getElementById('alertBanner');
+        if (banner) banner.style.display = 'none';
+
+        // Close modal
+        var modalEl = document.getElementById('alertModal');
+        if (modalEl) {
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+    };
+
+    window.showReferral = function () {
+    var panel = document.getElementById('referralPanel');
+    if (!panel) return;
+    document.getElementById('referralDate').value = new Date().toLocaleDateString('en-GB');
+    
+    var mustBmiScore    = "{{ must_result.bmi_score|default:'' }}";
+    var mustBmiDetail   = "{{ must_result.bmi_detail|default:''|safe }}";
+    var mustWtScore     = "{{ must_result.weight_loss_score|default:'' }}";
+    var mustWtDetail    = "{{ must_result.weight_detail|default:''|safe }}";
+    var mustAcuteScore  = "{{ must_result.acute_score|default:'' }}";
+    var mustAcuteDetail = "{{ must_result.acute_detail|default:''|safe }}";
+
+    var lines = [];
+    lines.push("NUTRITIONAL RISK REFERRAL");
+    lines.push("");
+    lines.push("Patient         {{ patient.last_name }}, {{ patient.first_name }}");
+    lines.push("Date of Birth   {{ patient.date_of_birth|date:'d/m/Y' }}");
+    lines.push("NHS Number      {{ patient.nhs_number }}");
+    lines.push("Referring GP    {{ request.user.get_full_name|default:request.user.username }}");
+    lines.push("Date            " + new Date().toLocaleDateString('en-GB'));
+    lines.push("");
+    lines.push("REASON FOR REFERRAL");
+    lines.push("Referred following opportunistic nutritional risk screening at");
+    lines.push("routine consultation using NutriRisk Assistant.");
+    lines.push("");
+    lines.push("ASSESSMENT FINDINGS");
+    if (bmi)    lines.push("  BMI             " + bmi + " kg/m\u00B2");
+    if (weight) lines.push("  Weight          " + weight + " kg");
+    if (albumin)lines.push("  Serum albumin   " + albumin + " g/dL");
+    lines.push("");
+    if (mustScore) {
+        lines.push("  MUST Score      " + mustScore + "  (" + mustRisk + " risk)");
+        if (mustBmiScore)   lines.push("    BMI score         " + mustBmiScore + "  \u2014 " + mustBmiDetail);
+        if (mustWtScore)    lines.push("    Weight loss score  " + mustWtScore + "  \u2014 " + mustWtDetail);
+        if (mustAcuteScore !== '') lines.push("    Acute illness      " + mustAcuteScore + "  \u2014 " + mustAcuteDetail);
+    }
+    lines.push("");
+    lines.push("URGENCY   " + urgentText);
+    lines.push("");
+    lines.push("REQUESTED ACTION");
+    lines.push("Full nutritional assessment and management plan.");
+    lines.push("Please contact patient to arrange.");
+    lines.push("");
+    lines.push("ADDITIONAL NOTES");
+    lines.push("");
+
+    document.getElementById('referralSummary').value = lines.join('\n');
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
+
+    window.copyReferral = function (btn) {
+        var text = document.getElementById('referralSummary').value;
+        navigator.clipboard.writeText(text).then(function () {
+            btn.textContent = '\u2713 Copied';
+            setTimeout(function () { btn.textContent = '\uD83D\uDCCB Copy to clipboard'; }, 2000);
+        });
+    };
+}());
+</script>

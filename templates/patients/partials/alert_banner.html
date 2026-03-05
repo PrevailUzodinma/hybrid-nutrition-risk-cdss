@@ -1,19 +1,19 @@
-<div class="alert-banner-{{ alert_result.colour }}"
+<div id="alertBanner"
+     class="alert-banner-{{ alert_result.colour }}"
      data-bs-toggle="modal"
      data-bs-target="#alertModal"
      role="alert"
      aria-live="polite">
     <span style="font-size:1.3rem;">{{ alert_result.emoji }}</span>
     <div>
-        <strong>NUTRITIONAL RISK IDENTIFIED - click for details</strong>
+        <strong>NUTRITIONAL RISK IDENTIFIED — click for details</strong>
         <div class="small mt-1">
             {% if alert_result.source == "BOTH" %}
                 Both MUST screening and ML pattern analysis indicate elevated risk.
             {% elif alert_result.source == "MUST" %}
                 MUST score = {{ must_result.total_score }} ({{ must_result.risk }}).
             {% elif alert_result.source == "ML" %}
-                ML model detected multivariable risk pattern
-                ({{ ml_result.probability|floatformat:0 }}% probability).
+                ML model detected multivariable risk pattern ({{ ml_probability_pct }}% probability).
             {% elif alert_result.source == "MUST_MODERATE" %}
                 MUST score = {{ must_result.total_score }} — borderline concern. Monitor at next visit.
             {% endif %}
