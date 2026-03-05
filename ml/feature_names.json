@@ -1,0 +1,9 @@
+[
+  "age",
+  "sex_encoded",
+  "bmi",
+  "albumin_gdl",
+  "haemoglobin_gdl",
+  "comorbidity_count",
+  "polypharmacy_5plus"
+]
