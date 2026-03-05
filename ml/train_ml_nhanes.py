@@ -301,9 +301,8 @@ def evaluate_model(model, scaler, X_test, y_test, feature_names):
         print(f"  {feature_names[i]:<25}  coef = {coefs[i]:+.4f}   ({direction})")
 
 
-# Step 10: Save artefacts 
+# Step 10: Save artefacts needed by the Django app.
 def save_artefacts(model, scaler, feature_names, output_dir):
-    """Save all model artefacts needed by the Django prototype."""
     os.makedirs(output_dir, exist_ok=True)
 
     model_path   = os.path.join(output_dir, "model.pkl")
@@ -329,6 +328,62 @@ def save_artefacts(model, scaler, feature_names, output_dir):
     print(f"  scaler.pkl             → {scaler_path}")
     print(f"  feature_names.json     → {fnames_path}")
     print(f"  model_coefficients.json→ {coefs_path}")
-    print(f"\n  Copy these files to your Django project root.")
-    print(f"     The ml_engine.py will load them automatically.")
+    print(f"\n  Copy these files to your Django project root, so the ML engine can access them.")
+
+
+# Main function
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Train nutritional risk ML model on real NHANES 2017-2018 data (65+)."
+    )
+    parser.add_argument(
+        "--csv",
+        default="nhanes_master_cdss.csv",
+        help="Path to merged NHANES master CSV file.",
+    )
+    parser.add_argument(
+        "--impute",
+        action="store_true",
+        help="Use median imputation instead of complete-case analysis.",
+    )
+    parser.add_argument(
+        "--output_dir",
+        default=".",
+        help="Directory to save model artefacts (default: current directory).",
+    )
+    args = parser.parse_args()
+
+    print(f"\n{'='*60}")
+    print("  NutriCDSS — ML TRAINING SCRIPT")
+    print("  Data source: REAL NHANES 2017-2018 (adults 65+)")
+    print("  NO SYNTHETIC DATA IS USED IN THIS SCRIPT")
+    print(f"{'='*60}")
+
+    # Pipeline
+    df = load_csv(args.csv)
+    df = resolve_columns(df)
+    df = encode_sex(df)
+    df = create_label(df)
+    df = handle_missing(df, FEATURE_NAMES, use_impute=args.impute)
+
+    X_train, X_test, y_train, y_test, used_features = split_data(df, FEATURE_NAMES)
+
+    model, scaler = train_model(X_train, y_train)
+    evaluate_model(model, scaler, X_test, y_test, used_features)
+    save_artefacts(model, scaler, used_features, args.output_dir)
+
+    print(f"\n{'='*60}")
+    print("  SUMMARY")
+    print(f"{'='*60}")
+    print(f"  Final training sample:  {len(X_train):,}")
+    print(f"  Final test sample:      {len(X_test):,}")
+    print(f"  Features used:          {used_features}")
+    print(f"  Label definition:       (BMI<18.5 OR albumin<3.5) AND (comorbidities>=1 OR polypharmacy)")
+    print(f"  random_state:           {RANDOM_STATE}")
+    print(f"\n Training complete. Artefacts saved to: {os.path.abspath(args.output_dir)}")
+
+
+if __name__ == "__main__":
+    main()
 
