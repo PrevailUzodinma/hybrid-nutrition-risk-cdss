@@ -24,3 +24,5 @@ instance/
 *.pkl
 *.csv
 model_coefficients.json
+
+seed_data.py
