@@ -261,10 +261,9 @@ def train_model(X_train, y_train):
 
     return model, scaler
 
-# ── Step 9: Evaluate model ─────────────────────────────────────────────────────
+# Step 9: Evaluate model and print full evaluation metrics.
 
 def evaluate_model(model, scaler, X_test, y_test, feature_names):
-    """Print full evaluation metrics."""
     X_test_scaled = scaler.transform(X_test)
     y_pred = model.predict(X_test_scaled)
     y_prob = model.predict_proba(X_test_scaled)[:, 1]
@@ -291,7 +290,7 @@ def evaluate_model(model, scaler, X_test, y_test, feature_names):
     print(f"\n  Classification report:")
     print(classification_report(y_test, y_pred, target_names=["Not at risk", "At risk"]))
 
-    # Feature coefficients (interpretability — key for dissertation)
+    # Feature coefficients (for interpretability)
     print(f"{'='*60}")
     print("  FEATURE COEFFICIENTS (log-odds; ranked by absolute value)")
     print(f"{'='*60}")
@@ -300,3 +299,36 @@ def evaluate_model(model, scaler, X_test, y_test, feature_names):
     for i in sorted_idx:
         direction = "↑ risk" if coefs[i] > 0 else "↓ risk"
         print(f"  {feature_names[i]:<25}  coef = {coefs[i]:+.4f}   ({direction})")
+
+
+# Step 10: Save artefacts 
+def save_artefacts(model, scaler, feature_names, output_dir):
+    """Save all model artefacts needed by the Django prototype."""
+    os.makedirs(output_dir, exist_ok=True)
+
+    model_path   = os.path.join(output_dir, "model.pkl")
+    scaler_path  = os.path.join(output_dir, "scaler.pkl")
+    fnames_path  = os.path.join(output_dir, "feature_names.json")
+    coefs_path   = os.path.join(output_dir, "model_coefficients.json")
+
+    joblib.dump(model, model_path)
+    joblib.dump(scaler, scaler_path)
+
+    with open(fnames_path, "w") as f:
+        json.dump(feature_names, f, indent=2)
+
+    coef_dict = {name: float(coef)
+                 for name, coef in zip(feature_names, model.coef_[0])}
+    with open(coefs_path, "w") as f:
+        json.dump(coef_dict, f, indent=2)
+
+    print(f"\n{'='*60}")
+    print("  ARTEFACTS SAVED")
+    print(f"{'='*60}")
+    print(f"  model.pkl              → {model_path}")
+    print(f"  scaler.pkl             → {scaler_path}")
+    print(f"  feature_names.json     → {fnames_path}")
+    print(f"  model_coefficients.json→ {coefs_path}")
+    print(f"\n  Copy these files to your Django project root.")
+    print(f"     The ml_engine.py will load them automatically.")
+
