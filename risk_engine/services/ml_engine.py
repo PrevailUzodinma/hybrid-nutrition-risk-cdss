@@ -85,3 +85,66 @@ def _get_model_and_scaler():
     if _model is None:
         _model, _scaler, _fnames = _load_model()
     return _model, _scaler, _fnames
+
+
+def score_patient(consultation, threshold: float = ML_THRESHOLD) -> dict:
+    model, scaler, feature_names = _get_model_and_scaler()
+
+    sex_encoded  = 1 if consultation.patient.sex == "M" else 0
+    bmi          = consultation.bmi             if consultation.bmi             is not None else 25.0
+    albumin      = consultation.albumin_gdl     if consultation.albumin_gdl     is not None else 4.0
+    haemoglobin  = consultation.haemoglobin_gdl if consultation.haemoglobin_gdl is not None else 13.5
+    comorbidity  = consultation.comorbidity_count if consultation.comorbidity_count is not None else 0
+    polypharmacy = 1 if consultation.polypharmacy_flag else 0
+
+    raw_values = [
+        consultation.patient.age,
+        sex_encoded,
+        bmi,
+        albumin,
+        haemoglobin,
+        comorbidity,
+        polypharmacy,
+    ]
+
+    feature_vector        = np.array([raw_values], dtype=float)
+    feature_vector_scaled = scaler.transform(feature_vector)
+
+    probability = float(model.predict_proba(feature_vector_scaled)[0][1])
+    risk_flag   = probability >= threshold
+
+    # Contribution = coefficient × scaled_value (log-odds attribution for XAI)
+    coefs         = model.coef_[0]
+    scaled_vals   = feature_vector_scaled[0]
+    contributions = coefs * scaled_vals
+
+    sorted_indices = np.argsort(np.abs(contributions))[::-1]
+
+    top_factors = []
+    for idx in sorted_indices[:4]:
+        feature      = feature_names[idx]
+        contribution = float(contributions[idx])
+        top_factors.append({
+            "feature":      feature,
+            "label":        FEATURE_LABELS.get(feature, feature),
+            "raw_value":    raw_values[idx],
+            "contribution": contribution,
+            "direction":    "increases" if contribution > 0 else "decreases",
+        })
+
+    factor_lines = [
+        f"{f['label']} ({f['raw_value']:.1f}) {f['direction']} risk"
+        for f in top_factors[:3]
+    ]
+
+    explanation = (
+        f"ML probability = {probability:.2f} ({'HIGH' if risk_flag else 'LOW'} risk). "
+        f"Top contributing factors: {'; '.join(factor_lines)}."
+    )
+
+    return {
+        "probability": probability,
+        "risk_flag":   risk_flag,
+        "top_factors": top_factors,
+        "explanation": explanation,
+    }
