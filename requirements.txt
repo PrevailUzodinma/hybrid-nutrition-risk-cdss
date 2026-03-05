@@ -1,5 +1,5 @@
-asgiref==3.11.1
-Django==4.2.13
-sqlparse==0.5.5
-typing_extensions==4.15.0
-tzdata==2025.3
+django==4.2.13
+scikit-learn==1.4.2
+numpy==1.26.4
+pandas==2.2.2
+joblib==1.4.2

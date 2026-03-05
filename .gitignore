@@ -19,3 +19,8 @@ __pycache__/
 .idea/
 
 instance/
+
+#ML artefacts
+*.pkl
+*.csv
+model_coefficients.json
