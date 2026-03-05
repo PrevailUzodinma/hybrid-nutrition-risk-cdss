@@ -77,3 +77,30 @@ def determine_alert(must_result: dict, ml_result: dict) -> dict:
         "next_steps":   next_steps,
         "summary_text": build_summary(level, source, must_result, ml_result),
     }
+
+
+def build_summary(level, source, must_result, ml_result):
+    if level == "NONE":
+        return "No nutritional risk detected at this consultation."
+
+    lines = []
+    if source == "BOTH":
+        lines.append(
+            "Both the clinical rule (MUST) and ML pattern analysis indicate HIGH nutritional risk."
+        )
+    elif source == "MUST":
+        lines.append(
+            f"Clinical rule (MUST score = {must_result['total_score']}) indicates HIGH nutritional risk."
+        )
+    elif source == "ML":
+        lines.append(
+            f"ML pattern analysis (probability = {ml_result['probability']:.0%}) indicates HIGH risk "
+            f"from multivariable factors not individually meeting MUST thresholds."
+        )
+    elif source == "MUST_MODERATE":
+        lines.append(f"MUST score = {must_result['total_score']} - MODERATE nutritional concern.")
+
+    lines.append(
+        "This system provides decision support only. You remain the clinical decision maker."
+    )
+    return " ".join(lines)
