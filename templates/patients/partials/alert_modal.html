@@ -8,7 +8,7 @@
                         <div class="fw-bold fs-6 mb-1">
                             {{ alert_result.emoji }}&nbsp;{% if alert_result.source == "BOTH" %}MUST + ML: Nutritional Risk Detected{% elif alert_result.source == "MUST" %}MUST Screening: High Risk{% elif alert_result.source == "ML" %}ML Analysis: High Risk{% elif alert_result.source == "MUST_MODERATE" %}MUST: Borderline Concern{% endif %}
                         </div>
-                        <div class="small text-muted">Decision support only &mdash; clinical judgement takes precedence</div>
+                        <div class="small text-muted">Decision support only - clinical judgement takes precedence</div>
                     </div>
                     <button type="button" class="btn-close mt-1" data-bs-dismiss="modal"></button>
                 </div>
@@ -21,7 +21,7 @@
                     <div class="d-flex align-items-center justify-content-between mb-2">
                         <span class="section-label">MUST SCORE</span>
                         <span class="badge {% if must_result.risk == 'HIGH' %}bg-danger{% elif must_result.risk == 'MODERATE' %}bg-warning text-dark{% else %}bg-success{% endif %}" style="font-size:.78rem;">
-                            {{ must_result.total_score }} &mdash; {{ must_result.risk }}
+                            {{ must_result.total_score }} - {{ must_result.risk }}
                         </span>
                     </div>
                     <div class="must-table-wrap">
@@ -33,7 +33,7 @@
                                     <td class="pe-3 text-muted" style="padding-top:10px;">{{ must_result.bmi_detail|safe }}</td>
                                 </tr>
                                 <tr class="must-row-divider">
-                                    <td class="ps-3 text-muted py-2">Weight loss (3–6 months)</td>
+                                    <td class="ps-3 text-muted py-2">Weight loss (3-6 months)</td>
                                     <td class="text-center fw-bold py-2">{{ must_result.weight_loss_score }}</td>
                                     <td class="pe-3 text-muted py-2">{{ must_result.weight_detail }}</td>
                                 </tr>
@@ -53,7 +53,7 @@
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <span class="section-label">ML ANALYSIS</span>
                         <span class="badge {% if ml_result.risk_flag %}bg-danger{% else %}bg-success{% endif %}" style="font-size:.78rem;">
-                            {{ ml_probability_pct|floatformat:0 }}% &mdash; {% if ml_result.risk_flag %}HIGH{% else %}LOW{% endif %}
+                            {{ ml_probability_pct|floatformat:0 }}% - {% if ml_result.risk_flag %}HIGH{% else %}LOW{% endif %}
                         </span>
                     </div>
                     <p class="small mb-3" style="color:#374151; line-height:1.7;">{{ ml_result.explanation }}</p>
@@ -119,7 +119,7 @@
                               placeholder="Click Pre-populate referral to generate..."
                               style="font-family:monospace; font-size:.8rem; line-height:1.7;"></textarea>
                     <div class="mt-2 d-flex gap-2">
-                        <button class="btn btn-outline-secondary btn-sm" onclick="copyReferral(this)">📋 Copy to clipboard</button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="copyReferral(this)"> Copy to clipboard</button>
                         <button class="btn btn-link btn-sm text-muted p-0" onclick="document.getElementById('referralPanel').style.display='none'">Hide</button>
                     </div>
                 </div>

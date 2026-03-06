@@ -30,6 +30,11 @@ FEATURE_LABELS = {
     "polypharmacy_5plus":  "Polypharmacy (≥5 medications)",
 }
 
+# To get Clinician-readable display values for encoded/binary features so that "Sex (0.0)" can be understood as female
+FEATURE_DISPLAY_VALUE = {
+    "sex_encoded":        {0: "Female",         1: "Male"},
+    "polypharmacy_5plus": {0: "No (< 5 meds)",  1: "Yes (≥ 5 meds)"},
+}
 
 def _get_artefact_paths():
     here         = os.path.dirname(os.path.abspath(__file__))
@@ -40,14 +45,9 @@ def _get_artefact_paths():
         "fnames": os.path.join(project_root, "feature_names.json"),
     }
 
-
+#  Load model.pkl, scaler.pkl, and feature_names.json from the project root, if any filr is missing
+#  raises RuntimeError and indicate which ones and where they should be or if Feature order in feature_names.json does not match FEATURE_NAMES here
 def _load_model():
-    """
-    Load model.pkl, scaler.pkl, and feature_names.json from the project root.
-    Raises RuntimeError if:
-    Any file is missing (tells you which ones and where they should be)
-    or Feature order in feature_names.json does not match FEATURE_NAMES here
-    """
     paths   = _get_artefact_paths()
     missing = [name for name, path in paths.items() if not os.path.exists(path)]
 
@@ -75,7 +75,6 @@ def _load_model():
 
     return model, scaler, fnames_from_file
 
-
 # Module-level cache — loaded once per Django process, reused on every request
 _model, _scaler, _fnames = None, None, None
 
@@ -85,6 +84,12 @@ def _get_model_and_scaler():
     if _model is None:
         _model, _scaler, _fnames = _load_model()
     return _model, _scaler, _fnames
+
+# function to return a clinician-readable display string for a feature value.
+def _display_value(feature: str, raw_value) -> str:
+    if feature in FEATURE_DISPLAY_VALUE:
+        return FEATURE_DISPLAY_VALUE[feature].get(int(raw_value), str(raw_value))
+    return f"{raw_value:.1f}"
 
 
 def score_patient(consultation, threshold: float = ML_THRESHOLD) -> dict:
@@ -123,28 +128,32 @@ def score_patient(consultation, threshold: float = ML_THRESHOLD) -> dict:
     top_factors = []
     for idx in sorted_indices[:4]:
         feature      = feature_names[idx]
+        raw_val      = raw_values[idx]
         contribution = float(contributions[idx])
         top_factors.append({
             "feature":      feature,
             "label":        FEATURE_LABELS.get(feature, feature),
-            "raw_value":    raw_values[idx],
+            "raw_value":    raw_val,
+            "display_value": _display_value(feature, raw_val),
             "contribution": contribution,
             "direction":    "increases" if contribution > 0 else "decreases",
         })
 
-    factor_lines = [
-        f"{f['label']} ({f['raw_value']:.1f}) {f['direction']} risk"
-        for f in top_factors[:3]
-    ]
+    medication_count = consultation.medication_count if consultation.medication_count is not None else 0
 
-    explanation = (
-        f"ML probability = {probability:.2f} ({'HIGH' if risk_flag else 'LOW'} risk). "
-        f"Top contributing factors: {'; '.join(factor_lines)}."
+    explanation  = _build_explanation(
+        top_factors, raw_values, feature_names,
+        probability, risk_flag, threshold,
+        comorbidity, polypharmacy, medication_count,
+    )
+    input_summary = _build_input_summary(
+        raw_values, feature_names, comorbidity, polypharmacy, medication_count
     )
 
     return {
-        "probability": probability,
-        "risk_flag":   risk_flag,
-        "top_factors": top_factors,
-        "explanation": explanation,
+        "probability":   probability,
+        "risk_flag":     risk_flag,
+        "top_factors":   top_factors,
+        "explanation":   explanation,     # natural language paragraph for the modal
+        "input_summary": input_summary,   # one-line list of what the model received
     }
