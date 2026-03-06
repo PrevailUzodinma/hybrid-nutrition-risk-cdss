@@ -175,3 +175,59 @@ def _build_input_summary(raw_values, feature_names, comorbidity, polypharmacy, m
         "Male" if vals["sex_encoded"] == 1 else "Female",
     ]
     return " · ".join(parts)
+
+# to reduce cognitive assembly of the model output, we provide a natural language explanation of the ML's result
+def _build_explanation(top_factors, raw_values, feature_names, probability, risk_flag, threshold, comorbidity, polypharmacy, medication_count):
+
+    vals     = dict(zip(feature_names, raw_values))
+    prob_pct = round(probability * 100, 1)
+
+    # Input context sentence
+    cond_str = f"{int(comorbidity)} condition{'s' if comorbidity != 1 else ''}"
+    poly_note = " (polypharmacy)" if polypharmacy else ""
+    med_str   = f"{int(medication_count)} medication{'s' if medication_count != 1 else ''}{poly_note}"
+
+    input_clause = (
+        f"Based on this patient's BMI of {vals['bmi']:.1f}, "
+        f"albumin of {vals['albumin_gdl']:.1f} g/dL, "
+        f"{cond_str} and {med_str}"
+    )
+
+    # Probability sentence
+    prob_sentence = (
+        f"the model estimated a {prob_pct}% probability of nutritional risk "
+        f"(threshold: {int(threshold * 100)}%)."
+    )
+
+    # Signal sentence only for top 2 factors
+    SIGNAL_PHRASES = {
+        "bmi":               lambda v: f"{'a low BMI' if v < 20 else 'BMI'}",
+        "albumin_gdl":       lambda v: f"{'a low serum albumin' if v < 3.8 else 'serum albumin'}",
+        "haemoglobin_gdl":   lambda v: f"{'a low haemoglobin' if v < 12 else 'haemoglobin'}",
+        "comorbidity_count": lambda v: f"{'multiple long-term conditions' if v >= 3 else 'long-term conditions'}",
+        "polypharmacy_5plus":lambda v: "polypharmacy (≥5 medications)" if v >= 1 else "medication count",
+        "age":               lambda v: f"age ({int(v)})",
+        "sex_encoded":       lambda v: "sex",
+    }
+
+    # Take top 2 factors by absolute contribution, skip if contribution near zero
+    meaningful = [f for f in top_factors[:2] if abs(f["contribution"]) > 0.05]
+
+    if not meaningful:
+        signal_sentence = ""
+    elif risk_flag:
+        phrases = [SIGNAL_PHRASES.get(f["feature"], lambda v: f["label"])(f["raw_value"])
+                   for f in meaningful]
+        if len(phrases) == 1:
+            signal_sentence = f"The pattern was most strongly associated with {phrases[0]}."
+        else:
+            signal_sentence = (
+                f"The pattern was most strongly associated with "
+                f"{phrases[0]} and {phrases[1]}."
+            )
+    else:
+        signal_sentence = (
+            "No individual feature pattern was strong enough to meet the risk threshold."
+        )
+
+    return f"{input_clause}, {prob_sentence} {signal_sentence}".strip()
