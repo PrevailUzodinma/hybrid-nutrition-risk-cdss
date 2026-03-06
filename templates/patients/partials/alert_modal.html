@@ -146,8 +146,35 @@
     var weight     = "{{ latest_consultation.weight_kg|default:'' }}";
     var albumin    = "{{ latest_consultation.albumin_gdl|default:'' }}";
 
-    
+    // Hides the alert banner if already reviewed this session
+    function applyReviewedState() {
+        if (sessionStorage.getItem('alert_reviewed_' + patientId) === 'true') {
+            var banner = document.getElementById('alertBanner');
+            if (banner) banner.style.display = 'none';
+        }
+    }
+    applyReviewedState();
+    document.addEventListener('DOMContentLoaded', applyReviewedState);
 
+    window.markAsReviewed = function () {
+        sessionStorage.setItem('alert_reviewed_' + patientId, 'true');
+
+        // Hide banner immediately
+        var banner = document.getElementById('alertBanner');
+        if (banner) banner.style.display = 'none';
+
+        // Close modal
+        var modalEl = document.getElementById('alertModal');
+        if (modalEl) {
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+    };
+
+    window.showReferral = function () {
+    var panel = document.getElementById('referralPanel');
+    if (!panel) return;
+    document.getElementById('referralDate').value = new Date().toLocaleDateString('en-GB');
     
     var mustBmiScore    = "{{ must_result.bmi_score|default:'' }}";
     var mustBmiDetail   = "{{ must_result.bmi_detail|default:''|safe }}";
