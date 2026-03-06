@@ -1,4 +1,5 @@
-<div class="alert-banner-{{ alert_result.colour }}"
+<div id="alertBanner"
+     class="alert-banner-{{ alert_result.colour }}"
      data-bs-toggle="modal"
      data-bs-target="#alertModal"
      role="alert"
@@ -12,10 +13,9 @@
             {% elif alert_result.source == "MUST" %}
                 MUST score = {{ must_result.total_score }} ({{ must_result.risk }}).
             {% elif alert_result.source == "ML" %}
-                ML model detected multivariable risk pattern
-                ({{ ml_result.probability|floatformat:0 }}% probability).
+                ML model detected multivariable risk pattern ({{ ml_probability_pct }}% probability).
             {% elif alert_result.source == "MUST_MODERATE" %}
-                MUST score = {{ must_result.total_score }} — borderline concern. Monitor at next visit.
+                MUST score = {{ must_result.total_score }} - borderline concern. Monitor at next visit.
             {% endif %}
         </div>
     </div>

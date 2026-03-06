@@ -22,3 +22,6 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"{self.patient} @ {self.appointment_time} on {self.appointment_date}"
+
+
+        

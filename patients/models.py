@@ -3,10 +3,6 @@ from django.contrib.auth.models import User
 
 
 class Patient(models.Model):
-    """
-    Core patient demographics. Static / slow-changing data.
-    NHS number is the unique patient identifier.
-    """
     SEX_CHOICES = [("M", "Male"), ("F", "Female")]
 
     nhs_number        = models.CharField(max_length=12, unique=True)
@@ -32,7 +28,6 @@ class Patient(models.Model):
 
 
 class Condition(models.Model):
-    """Long-term conditions / comorbidities. e.g. Diabetes, CVD, COPD, CKD."""
     patient        = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="conditions")
     condition_name = models.CharField(max_length=200)
     diagnosis_date = models.DateField()
@@ -43,11 +38,6 @@ class Condition(models.Model):
 
 
 class Medication(models.Model):
-    """
-    Prescribed medications. Active medication count drives the
-    polypharmacy flag (>=5) used by the ML engine.
-    end_date=NULL means its currently active.
-    """
     patient         = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="medications")
     medication_name = models.CharField(max_length=200)
     dosage          = models.CharField(max_length=100, blank=True)
@@ -59,20 +49,6 @@ class Medication(models.Model):
 
 
 class Consultation(models.Model):
-    """
-    Each GP encounter / visit. All clinical measurements taken at that visit.
-
-    BMI is a calculated property (weight / height²) — never stored directly.
-    polypharmacy_flag is a calculated property (medication_count >= 5).
-
-    acute_illness_flag:
-        True = patient is acutely ill AND has had no nutritional intake >5 days.
-        This is MUST Component 3. It must be set manually by the clinician.
-
-    medication_count / comorbidity_count:
-        Snapshot values at this visit. Stored because the live counts
-        may change between visits.
-    """
     patient            = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name="consultations")
     consultation_date  = models.DateField()
     weight_kg          = models.FloatField(null=True, blank=True)
@@ -97,7 +73,6 @@ class Consultation(models.Model):
 
     @property
     def bmi(self):
-        """Calculated BMI. Returns None if weight or height missing."""
         if self.weight_kg and self.height_cm and self.height_cm > 0:
             return round(self.weight_kg / ((self.height_cm / 100) ** 2), 1)
         return None
@@ -105,3 +80,4 @@ class Consultation(models.Model):
     @property
     def polypharmacy_flag(self):
         return self.medication_count >= 5
+
