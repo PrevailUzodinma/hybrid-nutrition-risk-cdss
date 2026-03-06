@@ -157,3 +157,21 @@ def score_patient(consultation, threshold: float = ML_THRESHOLD) -> dict:
         "explanation":   explanation,     # natural language paragraph for the modal
         "input_summary": input_summary,   # one-line list of what the model received
     }
+
+# One-line plain English summary of the values passed to the model.
+def _build_input_summary(raw_values, feature_names, comorbidity, polypharmacy, medication_count):
+    vals = dict(zip(feature_names, raw_values))
+
+    poly_note = " (polypharmacy)" if polypharmacy else ""
+    med_str   = f"{int(medication_count)} medication{'s' if medication_count != 1 else ''}{poly_note}"
+
+    parts = [
+        f"BMI {vals['bmi']:.1f}",
+        f"Albumin {vals['albumin_gdl']:.1f} g/dL",
+        f"Haemoglobin {vals['haemoglobin_gdl']:.1f} g/dL",
+        f"{int(comorbidity)} condition{'s' if comorbidity != 1 else ''}",
+        med_str,
+        f"Age {int(vals['age'])}",
+        "Male" if vals["sex_encoded"] == 1 else "Female",
+    ]
+    return " · ".join(parts)
