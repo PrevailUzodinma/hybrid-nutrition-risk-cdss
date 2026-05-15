@@ -62,9 +62,9 @@ def load_csv(csv_path: str) -> pd.DataFrame:
         print("    Please provide the path to your merged NHANES master CSV.")
         sys.exit(1)
     df = pd.read_csv(csv_path, low_memory=False)
-    print(f"\n{'='*60}")
+    print(f"\n{'-'*60}")
     print(f"  NHANES MASTER CSV LOADED")
-    print(f"{'='*60}")
+    print(f"{'-'*60}")
     print(f"  Total rows:    {len(df):,}")
     print(f"  Total columns: {len(df.columns)}")
     return df
@@ -87,7 +87,7 @@ def resolve_columns(df: pd.DataFrame) -> pd.DataFrame:
                 break
         if found:
             rename_map[found] = canonical
-            status = f"'{found}' → '{canonical}'"
+            status = f"'{found}' - '{canonical}'"
         else:
             missing.append(canonical)
             status = f"'{canonical}' — NOT FOUND (candidates: {candidates})"
@@ -106,7 +106,7 @@ def resolve_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 def encode_sex(df: pd.DataFrame) -> pd.DataFrame:
     """
-    make sex_encoded is 0=Female, 1=Male, because NHANES uses RIAGENDR: 1=Male, 2=Female, so recode to 0/1.
+    to make sex_encoded is 0=Female, 1=Male, because NHANES uses RIAGENDR: 1=Male, 2=Female, so recode to 0/1.
     """
     if "sex_encoded" not in df.columns:
         return df
@@ -135,9 +135,9 @@ def create_label(df: pd.DataFrame) -> pd.DataFrame:
     available = required.intersection(df.columns)
     missing = required - available
 
-    print(f"\n{'='*60}")
+    print(f"\n{'-'*60}")
     print("  LABEL CREATION (GLIM-INSPIRED OPERATIONAL DEFINITION)")
-    print(f"{'='*60}")
+    print(f"{'-'*60}")
 
     if missing:
         print(f"Missing columns for label creation: {missing}")
@@ -251,12 +251,8 @@ def train_model(X_train, y_train):
     )
     model.fit(X_train_scaled, y_train)
 
-    print(f"\n{'='*60}")
+    
     print("  MODEL TRAINING COMPLETE")
-    print(f"{'='*60}")
-    print(f"  Model type:       LogisticRegression")
-    print(f"  class_weight:     balanced")
-    print(f"  Solver:           lbfgs")
     print(f"  Iterations used:  {model.n_iter_[0]}")
 
     return model, scaler
@@ -275,9 +271,9 @@ def evaluate_model(model, scaler, X_test, y_test, feature_names):
     f1 = f1_score(y_test, y_pred, zero_division=0)
     cm = confusion_matrix(y_test, y_pred)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'-'*60}")
     print("  EVALUATION METRICS (test set)")
-    print(f"{'='*60}")
+    print(f"{'-'*60}")
     print(f"  ROC AUC:    {roc_auc:.4f}")
     print(f"  Accuracy:   {accuracy:.4f}")
     print(f"  Precision:  {precision:.4f}")
@@ -291,9 +287,9 @@ def evaluate_model(model, scaler, X_test, y_test, feature_names):
     print(classification_report(y_test, y_pred, target_names=["Not at risk", "At risk"]))
 
     # Feature coefficients (for interpretability)
-    print(f"{'='*60}")
+    print(f"{'-'*60}")
     print("  FEATURE COEFFICIENTS (log-odds; ranked by absolute value)")
-    print(f"{'='*60}")
+    print(f"{'-'*60}")
     coefs = model.coef_[0]
     sorted_idx = np.argsort(np.abs(coefs))[::-1]
     for i in sorted_idx:
@@ -321,14 +317,8 @@ def save_artefacts(model, scaler, feature_names, output_dir):
     with open(coefs_path, "w") as f:
         json.dump(coef_dict, f, indent=2)
 
-    print(f"\n{'='*60}")
     print("  ARTEFACTS SAVED")
-    print(f"{'='*60}")
-    print(f"  model.pkl              → {model_path}")
-    print(f"  scaler.pkl             → {scaler_path}")
-    print(f"  feature_names.json     → {fnames_path}")
-    print(f"  model_coefficients.json→ {coefs_path}")
-    print(f"\n  Copy these files to your Django project root, so the ML engine can access them.")
+
 
 
 # Main function

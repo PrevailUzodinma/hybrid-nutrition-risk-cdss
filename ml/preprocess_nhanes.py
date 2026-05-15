@@ -17,7 +17,7 @@ def yes1(series: pd.Series) -> pd.Series:
 # 1 Load ONLY needed columns from each file
 demo = safe_read_csv("demographics.csv", ["SEQN", "RIDAGEYR", "RIAGENDR", "RIDRETH3"])
 exam = safe_read_csv("examination.csv", ["SEQN", "BMXBMI", "BMXHT", "BMXWT"])
-labs = safe_read_csv("laboratory.csv", ["SEQN", "LBXSAL", "LBXHGB", "LBXGH", "LBXGLU"])
+labs = safe_read_csv("laboratory.csv", ["SEQN", "LBXSAL", "LBXHGB"])
 ques = safe_read_csv("questionnaire.csv", ["SEQN", "DIQ010", "MCQ160B", "MCQ160C", "MCQ160D", "MCQ160E", "MCQ160G", "MCQ220"])
 
 # Medications: using RXDCOUNT to take number of medications
@@ -43,7 +43,7 @@ exam_keep = exam_keep[["SEQN", "BMI"]]
 #  3 Labs (converted to numeric)
 
 labs_keep = labs.copy()
-for c in ["LBXSAL", "LBXHGB", "LBXGH", "LBXGLU"]:
+for c in ["LBXSAL", "LBXHGB"]:
     if c in labs_keep.columns:
         labs_keep[c] = pd.to_numeric(labs_keep[c], errors="coerce")
 
@@ -124,4 +124,4 @@ print("\nQuick checks:")
 print("BMI missing rate:", df["BMI"].isna().mean())
 print("Polypharmacy_5plus distribution:\n", df["polypharmacy_5plus"].value_counts(dropna=False))
 print("Comorbidity_count distribution (top):\n", df["comorbidity_count"].value_counts().head())
-print(df[["BMI","LBXSAL","LBXHGB","LBXGLU","LBXGH"]].isna().mean())
+print(df[["BMI","LBXSAL","LBXHGB"]].isna().mean())
