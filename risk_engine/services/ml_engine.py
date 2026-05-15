@@ -67,9 +67,9 @@ def _load_model():
 
     if fnames_from_file != FEATURE_NAMES:
         raise RuntimeError(
-            f"Feature order mismatch — silent wrong predictions prevented.\n"
-            f"  FEATURE_NAMES in ml_engine.py:  {FEATURE_NAMES}\n"
-            f"  feature_names.json on disk:     {fnames_from_file}\n"
+            f"Feature order mismatch between training artefact and ml inference engine\n"
+            f"FEATURE_NAMES in ml_engine.py:  {FEATURE_NAMES}\n"
+            f"feature_names.json saved:     {fnames_from_file}\n"
             f"Update FEATURE_NAMES in ml_engine.py to match feature_names.json exactly."
         )
 
