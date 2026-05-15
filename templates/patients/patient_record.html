@@ -37,7 +37,7 @@
 {# ── Metric Cards ─────────────────────────────────────────────────────────── #}
 {% if latest_consultation %}
 <div class="row g-3 mb-3">
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md">
         <div class="metric-card">
             <h6>Weight</h6>
             <div class="metric-value">{{ latest_consultation.weight_kg|default:"—" }}
@@ -45,7 +45,29 @@
             <div class="metric-sub">{{ latest_consultation.consultation_date|date:"d M Y" }}</div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md">
+        <div class="metric-card">
+            <h6>Height</h6>
+            <div class="metric-value">
+                {% if latest_consultation.height_cm %}
+                    {{ latest_consultation.height_cm|floatformat:1 }}
+                    <small class="fs-6 fw-normal">cm</small>
+                {% else %}—{% endif %}
+            </div>
+            <div class="metric-sub">
+                {% if height_change_cm %}
+                    {% if height_change_cm < 0 %}
+                        <span class="text-warning">↓{{ height_change_cm|floatformat:1|slice:"1:" }} cm vs 5 yrs ago</span>
+                    {% else %}
+                        stable
+                    {% endif %}
+                {% else %}
+                    recorded height
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md">
         <div class="metric-card">
             <h6>BMI</h6>
             <div class="metric-value
@@ -58,7 +80,7 @@
             <div class="metric-sub">kg/m²</div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md">
         <div class="metric-card">
             <h6>Albumin</h6>
             <div class="metric-value
@@ -70,7 +92,7 @@
             <div class="metric-sub">Serum albumin</div>
         </div>
     </div>
-    <div class="col-6 col-md-3">
+    <div class="col-6 col-md">
         <div class="metric-card">
             <h6>Medications</h6>
             <div class="metric-value {% if latest_consultation.polypharmacy_flag %}text-warning{% endif %}">

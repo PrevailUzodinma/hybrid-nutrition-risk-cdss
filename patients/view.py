@@ -60,6 +60,18 @@ def patient_record(request, patient_id):
     chart_bmi     = [c.bmi          for c in chart_qs]
     chart_albumin = [c.albumin_gdl  for c in chart_qs]
 
+    # Height change: compare latest vs earliest consultation with a recorded height
+    height_change_cm = None
+    if latest and latest.height_cm:
+        earliest_with_height = (
+            all_consultations
+            .exclude(height_cm__isnull=True)
+            .order_by("consultation_date")
+            .first()
+        )
+        if earliest_with_height and earliest_with_height.pk != latest.pk:
+            height_change_cm = round(latest.height_cm - earliest_with_height.height_cm, 1)
+
     return render(request, "patients/patient_record.html", {
         "patient":              patient,
         "latest_consultation":  latest,
@@ -75,4 +87,5 @@ def patient_record(request, patient_id):
         "chart_weight":         chart_weight,
         "chart_bmi":            chart_bmi,
         "chart_albumin":        chart_albumin,
+        "height_change_cm":     height_change_cm,
     })
