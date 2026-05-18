@@ -53,7 +53,7 @@ def patient_record(request, patient_id):
             },
         )
 
-    # Chart.js data chronologically showing last 10 consultations 
+     # Chart.js data chronologically showing last 10 consultations 
     chart_qs      = list(all_consultations.order_by("consultation_date")[:10])
     chart_labels  = [c.consultation_date.strftime("%b %Y") for c in chart_qs]
     chart_weight  = [c.weight_kg    for c in chart_qs]

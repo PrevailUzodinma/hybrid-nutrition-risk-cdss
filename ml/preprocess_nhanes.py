@@ -15,7 +15,7 @@ def yes1(series: pd.Series) -> pd.Series:
     return (series == 1).astype(int)
 
 # 1 Load ONLY needed columns from each file
-demo = safe_read_csv("demographics.csv", ["SEQN", "RIDAGEYR", "RIAGENDR", "RIDRETH3"])
+demo = safe_read_csv("demographics.csv", ["SEQN", "RIDAGEYR", "RIAGENDR"])
 exam = safe_read_csv("examination.csv", ["SEQN", "BMXBMI", "BMXHT", "BMXWT"])
 labs = safe_read_csv("laboratory.csv", ["SEQN", "LBXSAL", "LBXHGB"])
 ques = safe_read_csv("questionnaire.csv", ["SEQN", "DIQ010", "MCQ160B", "MCQ160C", "MCQ160D", "MCQ160E", "MCQ160G", "MCQ220"])
